@@ -19,7 +19,6 @@ blueprint:
       selector:
         entity:
           domain: binary_sensor
-          device_class: window
     sunset_offset_mins:
       name: Verzögerung nach Sonnenuntergang (Minuten)
       description: Minuten, die nach Sonnenuntergang gewartet werden soll.
