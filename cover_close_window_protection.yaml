@@ -60,7 +60,7 @@ trigger:
   - platform: template
     value_template: >
       {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-      {% if sunset < now() %}
+      {% if sunset > now() %}
         {% set sunset = sunset - timedelta(days=1) %}
       {% endif %}
       {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
