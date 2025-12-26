@@ -1,46 +1,39 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung nach Sonnenuntergang)
+  name: Rollo-Steuerung (Smarte Fensteröffnung - Fix)
   description: >
-    1. Schließt das Rollo X Minuten nach Sonnenuntergang, falls das Fenster zu ist.
-    2. Schließt das Rollo, wenn das Fenster nach der Zeit geschlossen wird.
-    3. Öffnet das Rollo auf eine bestimmte Prozentzahl, wenn das Fenster geöffnet wird,
-       ABER NUR wenn es bereits nach Sonnenuntergang (+ Offset) ist.
+    Schließt das Rollo X Minuten nach Sonnenuntergang (Fenster-Check).
+    Öffnet das Rollo optional auf eine Wunschposition beim Öffnen (nur nach Sonnenuntergang).
   domain: automation
   input:
     target_cover:
       name: Rollo (Cover)
-      description: Das Rollo, das gesteuert werden soll.
       selector:
         entity:
           domain: cover
     window_sensor:
-      name: Fenstersensor
-      description: Der Sensor für das Fenster.
+      name: Fenster- oder Türsensor
       selector:
         entity:
           domain: binary_sensor
           device_class:
             - window
             - door
-    #sunset_offset_mins:
-    #  name: Verzögerung nach Sonnenuntergang (Minuten)
-    #  description: Minuten, die nach Sonnenuntergang gewartet werden soll.
-    #  default: 30
-    #  selector:
-    #    number:
-    #      min: 0
-    #      max: 300
-    #      unit_of_measurement: min
-    #      mode: box
+    sunset_offset_mins:
+      name: Verzögerung nach Sonnenuntergang (Minuten)
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 300
+          unit_of_measurement: min
+          mode: box
     enable_auto_open:
-      name: Automatisch öffnen bei Fensteröffnung
-      description: Wenn aktiviert, fährt das Rollo hoch, sobald das Fenster geöffnet wird (nur nach Sonnenuntergang).
+      name: Automatisch öffnen bei Öffnung
       default: false
       selector:
         boolean: {}
     open_position_pct:
-      name: Öffnungsgrad bei Fensteröffnung
-      description: Auf wie viel Prozent soll das Rollo fahren? (100 = ganz offen)
+      name: Öffnungsgrad bei Öffnung
       default: 100
       selector:
         number:
@@ -56,47 +49,39 @@ variables:
   open_position: !input open_position_pct
 
 trigger:
-  # Auslöser 1: Zeit erreicht (Sonnenuntergang + X Minuten)
-  #- platform: template
-  #  value_template: >
-  #    {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-  #    {% if sunset > now() %}
-  #      {% set sunset = sunset - timedelta(days=1) %}
-  #    {% endif %}
-  #    {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
-  #  id: "zeit_zum_schliessen"
-
-  - trigger: time
-    at: input_datetime.next_sunset_with_offset
-
-  # Auslöser 2: Fenster wird geschlossen
+  # Auslöser 1: Direkt zum Sonnenuntergang
+  - platform: sun
+    event: sunset
+    offset: "00:00:00"
+    id: "sonnenuntergang_event"
+  
+  # Auslöser 2: Fenster/Tür wird geschlossen
   - platform: state
     entity_id: !input window_sensor
     from: "on"
     to: "off"
-    id: "fenster_wurde_zu"
-
-  # Auslöser 3: Fenster wird geöffnet
+    id: "sensor_wurde_zu"
+  
+  # Auslöser 3: Fenster/Tür wird geöffnet
   - platform: state
     entity_id: !input window_sensor
     from: "off"
     to: "on"
-    id: "fenster_wurde_auf"
+    id: "sensor_wurde_auf"
 
 action:
   - choose:
-      # FALL 1: Fenster wird geöffnet
+      # FALL 1: SENSOR WIRD GEÖFFNET
       - conditions:
           - condition: trigger
-            id: "fenster_wurde_auf"
-          # Checkbox muss aktiv sein
+            id: "sensor_wurde_auf"
           - condition: template
             value_template: !input enable_auto_open
-          # NEU: Es muss bereits NACH der Sonnenuntergangszeit (+ Offset) sein
+          # Prüfung: Ist es bereits nach Sonnenuntergang + Offset?
           - condition: template
             value_template: >
               {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-              {% if sunset > now() %}
+              {% if sunset > now() + timedelta(hours=12) %}
                 {% set sunset = sunset - timedelta(days=1) %}
               {% endif %}
               {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
@@ -107,19 +92,34 @@ action:
             data:
               position: "{{ open_position }}"
 
-      # FALL 2: Schließen-Logik (Zeit erreicht oder Fenster wird nach der Zeit geschlossen)
+      # FALL 2: SONNENUNTERGANG ERREICHT
       - conditions:
-          - condition: or
-            conditions:
-              - condition: trigger
-                id: "zeit_zum_schliessen"
-              - condition: trigger
-                id: "fenster_wurde_zu"
+          - condition: trigger
+            id: "sonnenuntergang_event"
+        sequence:
+          # Warte die eingestellten Minuten
+          - delay:
+              minutes: "{{ offset_mins | int }}"
+          # Prüfe ob Fenster zu ist
           - condition: state
             entity_id: !input window_sensor
             state: "off"
-          - condition: time
-            after: input_datetime.next_sunset_with_offset
+          - service: cover.close_cover
+            target:
+              entity_id: !input target_cover
+
+      # FALL 3: SENSOR WIRD NACH DER ZEIT GESCHLOSSEN
+      - conditions:
+          - condition: trigger
+            id: "sensor_wurde_zu"
+          # Prüfung: Ist es bereits nach Sonnenuntergang + Offset?
+          - condition: template
+            value_template: >
+              {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
+              {% if sunset > now() + timedelta(hours=12) %}
+                {% set sunset = sunset - timedelta(days=1) %}
+              {% endif %}
+              {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
         sequence:
           - service: cover.close_cover
             target:
