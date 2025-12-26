@@ -22,16 +22,16 @@ blueprint:
           device_class:
             - window
             - door
-    sunset_offset_mins:
-      name: Verzögerung nach Sonnenuntergang (Minuten)
-      description: Minuten, die nach Sonnenuntergang gewartet werden soll.
-      default: 30
-      selector:
-        number:
-          min: 0
-          max: 300
-          unit_of_measurement: min
-          mode: box
+    #sunset_offset_mins:
+    #  name: Verzögerung nach Sonnenuntergang (Minuten)
+    #  description: Minuten, die nach Sonnenuntergang gewartet werden soll.
+    #  default: 30
+    #  selector:
+    #    number:
+    #      min: 0
+    #      max: 300
+    #      unit_of_measurement: min
+    #      mode: box
     enable_auto_open:
       name: Automatisch öffnen bei Fensteröffnung
       description: Wenn aktiviert, fährt das Rollo hoch, sobald das Fenster geöffnet wird (nur nach Sonnenuntergang).
