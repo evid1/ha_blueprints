@@ -57,14 +57,17 @@ variables:
 
 trigger:
   # Auslöser 1: Zeit erreicht (Sonnenuntergang + X Minuten)
-  - platform: template
-    value_template: >
-      {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-      {% if sunset > now() %}
-        {% set sunset = sunset - timedelta(days=1) %}
-      {% endif %}
-      {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
-    id: "zeit_zum_schliessen"
+  #- platform: template
+  #  value_template: >
+  #    {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
+  #    {% if sunset > now() %}
+  #      {% set sunset = sunset - timedelta(days=1) %}
+  #    {% endif %}
+  #    {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+  #  id: "zeit_zum_schliessen"
+
+  - trigger: time
+    at: input_datetime.next_sunset_with_offset
 
   # Auslöser 2: Fenster wird geschlossen
   - platform: state
@@ -115,13 +118,8 @@ action:
           - condition: state
             entity_id: !input window_sensor
             state: "off"
-          - condition: template
-            value_template: >
-              {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-              {% if sunset > now() %}
-                {% set sunset = sunset - timedelta(days=1) %}
-              {% endif %}
-              {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+          - condition: time
+            after: input_datetime.next_sunset_with_offset
         sequence:
           - service: cover.close_cover
             target:
