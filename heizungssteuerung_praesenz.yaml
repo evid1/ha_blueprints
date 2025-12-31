@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung mit Außentemperatur-Sperre (v2)"
+  name: "Präsenz-Heizungssteuerung mit Außentemperatur-Sperre (v3)"
   description: "Heizt nur bei Anwesenheit, geschlossenem Fenster, im Zeitfenster UND wenn es draußen kalt genug ist."
   domain: automation
   input:
@@ -9,7 +9,7 @@ blueprint:
         entity:
           domain: climate
     window_sensor:
-      name: Fenster-/Tür-Sensor
+      name: Fenster- oder Türsensor
       selector:
         entity:
           domain: binary_sensor
