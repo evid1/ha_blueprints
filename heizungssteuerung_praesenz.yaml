@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus) v3"
+  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus) v4"
   description: "Heizt bei Anwesenheit auf Wohlfühltemperatur und schaltet auf 'Auto' zurück, wenn niemand da ist, gelüftet wird oder es draußen warm genug ist."
   domain: automation
   input:
