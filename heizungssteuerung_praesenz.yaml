@@ -1,6 +1,6 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung mit Außentemperatur-Sperre (v3)"
-  description: "Heizt nur bei Anwesenheit, geschlossenem Fenster, im Zeitfenster UND wenn es draußen kalt genug ist."
+  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus)"
+  description: "Setzt Wohlfühltemperatur bei Präsenz und wechselt in den 'Auto'-Modus bei Abwesenheit, offenem Fenster oder außerhalb der Zeit."
   domain: automation
   input:
     climate_entity:
@@ -9,13 +9,11 @@ blueprint:
         entity:
           domain: climate
     window_sensor:
-      name: Fenster- oder Türsensor
+      name: Fenster-/Tür-Sensor
       selector:
         entity:
           domain: binary_sensor
-          device_class:
-            - window
-            - door
+          device_class: opening
     presence_sensor:
       name: Anwesenheitssensor
       selector:
@@ -24,14 +22,12 @@ blueprint:
           device_class: occupancy
     outdoor_temp_sensor:
       name: Außentemperatur-Sensor
-      description: Die Entität, die die aktuelle Außentemperatur liefert.
       selector:
         entity:
           domain: sensor
           device_class: temperature
     outdoor_temp_threshold:
       name: Außentemperatur-Schwellenwert
-      description: Wohlfühltemperatur wird nur aktiviert, wenn es draußen kälter als dieser Wert ist.
       default: 15
       selector:
         number:
@@ -74,15 +70,6 @@ blueprint:
           max: 25
           step: 0.5
           unit_of_measurement: °C
-    eco_temp:
-      name: Eco-Temperatur
-      default: 17
-      selector:
-        number:
-          min: 5
-          max: 20
-          step: 0.5
-          unit_of_measurement: °C
 
 mode: restart
 
@@ -100,7 +87,7 @@ trigger:
 
 action:
   - choose:
-      # FALL 1: Heizen (Wohlfühltemperatur)
+      # FALL 1: Wohlfühltemperatur (Heizen)
       - conditions:
           - condition: state
             entity_id: !input presence_sensor
@@ -117,17 +104,17 @@ action:
         sequence:
           - delay:
               minutes: !input presence_delay
-          # Sicherheitsprüfung nach Delay
           - condition: state
             entity_id: !input presence_sensor
             state: "on"
+          # Wir setzen hier explizit die Temperatur (das schaltet viele Thermostate autom. in 'heat')
           - service: climate.set_temperature
             target:
               entity_id: !input climate_entity
             data:
               temperature: !input comfort_temp
 
-      # FALL 2: Sparen (Eco-Temperatur)
+      # FALL 2: Zurück in den Auto-Modus (Sparen)
       - conditions:
           - or:
               - condition: state
@@ -151,12 +138,12 @@ action:
             then:
               - delay:
                   minutes: !input absence_delay
-              # Sicherheitsprüfung: Nur umschalten, wenn immer noch niemand da ist
               - condition: state
                 entity_id: !input presence_sensor
                 state: "off"
-          - service: climate.set_temperature
+          # Wechsel in den HVAC-Modus "auto"
+          - service: climate.set_hvac_mode
             target:
               entity_id: !input climate_entity
             data:
-              temperature: !input eco_temp
+              hvac_mode: "auto"
