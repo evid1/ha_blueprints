@@ -1,6 +1,6 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus) v4"
-  description: "Heizt bei Anwesenheit auf Wohlfühltemperatur und schaltet auf 'Auto' zurück, wenn niemand da ist, gelüftet wird oder es draußen warm genug ist."
+  name: "Präsenz-Heizungssteuerung (v5) - Ohne Start-Zeit-Trigger"
+  description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'Auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
   domain: automation
   input:
     climate_entity:
@@ -75,6 +75,11 @@ blueprint:
 
 mode: restart
 
+variables:
+  presence_delay_val: !input presence_delay
+  absence_delay_val: !input absence_delay
+  min_delay: "{{ [presence_delay_val, absence_delay_val] | min }}"
+
 trigger:
   - platform: state
     entity_id: !input presence_sensor
@@ -84,10 +89,14 @@ trigger:
     entity_id: !input outdoor_temp_sensor
   - platform: time
     at: !input end_time
-  - platform: time
-    at: !input start_time
 
 action:
+  # Ratenbegrenzung
+  - condition: template
+    value_template: >
+      {{ state_attr('automation.' ~ this.entity_id, 'last_triggered') == None or 
+         (now() - state_attr('automation.' ~ this.entity_id, 'last_triggered')).total_seconds() >= (min_delay * 60) }}
+  
   - choose:
       # FALL 1: Wohlfühltemperatur (Heizen)
       - conditions:
