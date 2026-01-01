@@ -1,6 +1,6 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus)"
-  description: "Setzt Wohlfühltemperatur bei Präsenz und wechselt in den 'Auto'-Modus bei Abwesenheit, offenem Fenster oder außerhalb der Zeit."
+  name: "Präsenz-Heizungssteuerung (Comfort vs. Auto-Modus) v3"
+  description: "Heizt bei Anwesenheit auf Wohlfühltemperatur und schaltet auf 'Auto' zurück, wenn niemand da ist, gelüftet wird oder es draußen warm genug ist."
   domain: automation
   input:
     climate_entity:
@@ -13,7 +13,9 @@ blueprint:
       selector:
         entity:
           domain: binary_sensor
-          device_class: opening
+          device_class:
+            - window
+            - door
     presence_sensor:
       name: Anwesenheitssensor
       selector:
@@ -107,7 +109,6 @@ action:
           - condition: state
             entity_id: !input presence_sensor
             state: "on"
-          # Wir setzen hier explizit die Temperatur (das schaltet viele Thermostate autom. in 'heat')
           - service: climate.set_temperature
             target:
               entity_id: !input climate_entity
@@ -141,7 +142,6 @@ action:
               - condition: state
                 entity_id: !input presence_sensor
                 state: "off"
-          # Wechsel in den HVAC-Modus "auto"
           - service: climate.set_hvac_mode
             target:
               entity_id: !input climate_entity
