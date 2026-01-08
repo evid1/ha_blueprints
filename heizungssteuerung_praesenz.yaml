@@ -92,10 +92,13 @@ variables:
 trigger:
   - platform: state
     entity_id: !input presence_sensor
+    id: "presence_sensor"
   - platform: state
     entity_id: !input window_sensor
+    id: "window_sensor"
   - platform: time
     at: !input end_time
+    id: "end_time"
 
 action:
   # Ratenbegrenzung
@@ -105,7 +108,18 @@ action:
          (now() - state_attr('automation.' ~ this.entity_id, 'last_triggered')).total_seconds() >= (min_delay_val * 60) }}
   
   - choose:
-      # FALL 1: Wohlfühltemperatur (Heizen)
+      # FALL 1: Heizzeit abgelaufen, zurück in Auto-Modus (sparen)
+      - conditions:
+          - condition: trigger
+            id: "end_time"
+        sequence:
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: !input climate_entity
+            data:
+              hvac_mode: "auto"
+
+      # FALL 2: Wohlfühltemperatur (Heizen)
       - conditions:
           - condition: state
             entity_id: !input presence_sensor
@@ -131,7 +145,7 @@ action:
             data:
               temperature: !input comfort_temp
 
-      # FALL 2: Zurück in den Auto-Modus (Sparen)
+      # FALL 3: Zurück in den Auto-Modus (sparen)
       - conditions:
           - or:
               - condition: state
@@ -140,10 +154,6 @@ action:
               - condition: state
                 entity_id: !input window_sensor
                 state: "on"
-              - condition: time
-                after: !input end_time
-              - condition: time
-                before: !input start_time
               - condition: numeric_state
                 entity_id: !input outdoor_temp_sensor
                 above: !input outdoor_temp_threshold
@@ -152,6 +162,10 @@ action:
               - condition: state
                 entity_id: !input presence_sensor
                 state: "off"
+              - condition: time
+                after: !input start_time
+              - condition: time
+                before: !input end_time
             then:
               - delay:
                   minutes: !input absence_delay
