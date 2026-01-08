@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v7)"
+  name: "Präsenz-Heizungssteuerung (v8)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
   domain: automation
   input:
@@ -159,21 +159,23 @@ action:
                 above: !input outdoor_temp_threshold
         sequence:
           - if:
-              - condition: state
-                entity_id: !input presence_sensor
-                state: "off"
               - condition: time
                 after: !input start_time
               - condition: time
                 before: !input end_time
             then:
-              - delay:
-                  minutes: !input absence_delay
-              - condition: state
-                entity_id: !input presence_sensor
-                state: "off"
-          - service: climate.set_hvac_mode
-            target:
-              entity_id: !input climate_entity
-            data:
-              hvac_mode: "auto"
+              - if:
+                  - condition: state
+                    entity_id: !input presence_sensor
+                    state: "off"
+                then:
+                  - delay:
+                      minutes: !input absence_delay
+                  - condition: state
+                    entity_id: !input presence_sensor
+                    state: "off"
+              - service: climate.set_hvac_mode
+                target:
+                  entity_id: !input climate_entity
+                data:
+                  hvac_mode: "auto"
