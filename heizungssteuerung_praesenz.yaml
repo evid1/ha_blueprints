@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v9)"
+  name: "Präsenz-Heizungssteuerung (v10)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
   domain: automation
   input:
