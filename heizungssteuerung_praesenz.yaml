@@ -110,12 +110,12 @@ trigger:
 action:
   # Ratenbegrenzung
   - or:
-    - condition: template
-      value_template: >
-        {{ states(last_finished_timestamp_val) == None or 
-          (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
-    - condition: trigger
-      id: "end_time"
+      - condition: template
+        value_template: >
+          {{ states(last_finished_timestamp_val) == None or 
+            (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
+      - condition: trigger
+        id: "end_time"
   - condition: template
     value_template: "{{ states(climate_entity_state) != 'off' }}"
   
