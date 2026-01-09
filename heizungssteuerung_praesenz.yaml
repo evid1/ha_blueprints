@@ -81,6 +81,11 @@ blueprint:
           max: 25
           step: 1
           unit_of_measurement: min
+    last_finished_timestamp:
+      name: Helfer-Variable für das Speichern des letzten vollständigen Durchlaufes
+      selector:
+        entity:
+          domain: input_datetime
 
 mode: restart
 
@@ -88,6 +93,7 @@ variables:
   presence_delay_val: !input presence_delay
   absence_delay_val: !input absence_delay
   min_delay_val: !input min_delay
+  last_finished_timestamp_val: !input last_finished_timestamp
 
 trigger:
   - platform: state
@@ -104,8 +110,8 @@ action:
   # Ratenbegrenzung
   - condition: template
     value_template: >
-      {{ state_attr(this.entity_id, 'last_triggered') == None or 
-        (now() - state_attr(this.entity_id, 'last_triggered') | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
+      {{ states(last_finished_timestamp_val) == None or 
+        (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
   - condition: template
     value_template: "{{ states(climate_entity) != 'off' }}"
   
@@ -181,3 +187,9 @@ action:
                   entity_id: !input climate_entity
                 data:
                   hvac_mode: "auto"
+                  
+  - service: input_datetime.set_datetime
+    target:
+      entity_id: !input last_finished_timestamp
+    data:
+      datetime: "{{ now() }}"
