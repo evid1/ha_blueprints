@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v10)"
+  name: "Präsenz-Heizungssteuerung (v11)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
   domain: automation
   input:
@@ -94,6 +94,7 @@ variables:
   absence_delay_val: !input absence_delay
   min_delay_val: !input min_delay
   last_finished_timestamp_val: !input last_finished_timestamp
+  climate_entity_state: !input climate_entity
 
 trigger:
   - platform: state
@@ -113,7 +114,7 @@ action:
       {{ states(last_finished_timestamp_val) == None or 
         (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
   - condition: template
-    value_template: "{{ states(climate_entity) != 'off' }}"
+    value_template: "{{ states(climate_entity_state) != 'off' }}"
   
   - choose:
       # FALL 1: Heizzeit abgelaufen, zurück in Auto-Modus (sparen)
