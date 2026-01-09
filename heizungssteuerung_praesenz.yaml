@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v11)"
+  name: "Präsenz-Heizungssteuerung (v12)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
   domain: automation
   input:
@@ -153,6 +153,11 @@ action:
               entity_id: !input climate_entity
             data:
               temperature: !input comfort_temp
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_finished_timestamp
+            data:
+              datetime: "{{ now() }}"
 
       # FALL 3: Zurück in den Auto-Modus (sparen)
       - conditions:
@@ -188,9 +193,9 @@ action:
                   entity_id: !input climate_entity
                 data:
                   hvac_mode: "auto"
+              - service: input_datetime.set_datetime
+                target:
+                  entity_id: !input last_finished_timestamp
+                data:
+                  datetime: "{{ now() }}"
                   
-  - service: input_datetime.set_datetime
-    target:
-      entity_id: !input last_finished_timestamp
-    data:
-      datetime: "{{ now() }}"
