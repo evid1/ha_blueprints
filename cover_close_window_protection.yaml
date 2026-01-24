@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v2)
+  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v3)
   description: >
     Schließt das Rollo X Minuten nach Sonnenuntergang (mit Fenster-Check).
     Öffnet das Rollo optional auf eine Wunschposition beim Öffnen (nur nach Sonnenuntergang).
@@ -18,15 +18,20 @@ blueprint:
           device_class:
             - window
             - door
-    sunset_offset_mins:
-      name: Verzögerung nach Sonnenuntergang (Minuten)
-      default: 30
+    helper_close_cover:
+      name: Helfer-Variable ob das Rollo geschlossen werden soll
       selector:
-        number:
-          min: 0
-          max: 300
-          unit_of_measurement: min
-          mode: box
+        entity:
+          domain: binary_sensor
+    #sunset_offset_mins:
+    #  name: Verzögerung nach Sonnenuntergang (Minuten)
+    #  default: 30
+    #  selector:
+    #    number:
+    #      min: 0
+    #      max: 300
+    #      unit_of_measurement: min
+    #      mode: box
     enable_auto_open:
       name: Automatisch öffnen bei Öffnung
       default: false
@@ -45,7 +50,7 @@ blueprint:
 mode: restart
 
 variables:
-  offset_mins: !input sunset_offset_mins
+  #offset_mins: !input sunset_offset_mins
   open_position: !input open_position_pct
 
 trigger:
@@ -54,13 +59,17 @@ trigger:
   #  event: sunset
   #  offset: "00:00:00"
   #  id: "sonnenuntergang_event"
-  - platform: template
-    value_template: >
-      {% set sunset = as_datetime(state_attr('sun.sun', 'next_dusk')) %}
-      {% if sunset > now() + timedelta(hours=12) %}
-        {% set sunset = sunset - timedelta(days=1) %}
-      {% endif %}
-      {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+  #- platform: template
+  #  value_template: >
+  #    {% set sunset = as_datetime(state_attr('sun.sun', 'next_dusk')) %}
+  #    {% if sunset > now() + timedelta(hours=12) %}
+  #      {% set sunset = sunset - timedelta(days=1) %}
+  #    {% endif %}
+  #    {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+  - platform: state
+    entity_id: !input helper_close_cover
+    from: "off"
+    to: "on"
     id: "sonnenuntergang_event"
   
   # Auslöser 2: Fenster/Tür wird geschlossen
@@ -86,13 +95,16 @@ action:
           - condition: template
             value_template: !input enable_auto_open
           # Prüfung: Ist es bereits nach Sonnenuntergang + Offset?
-          - condition: template
-            value_template: >
-              {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
-              {% if sunset > now() + timedelta(hours=12) %}
-                {% set sunset = sunset - timedelta(days=1) %}
-              {% endif %}
-              {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+          #- condition: template
+          #  value_template: >
+          #    {% set sunset = as_datetime(state_attr('sun.sun', 'next_setting')) %}
+          #    {% if sunset > now() + timedelta(hours=12) %}
+          #      {% set sunset = sunset - timedelta(days=1) %}
+          #    {% endif %}
+          #    {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
+          - condition: state
+            entity_id: !input helper_close_cover
+            state: "on"
         sequence:
           - service: cover.set_cover_position
             target:
