@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung - Fix) - (v1)
+  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v1)
   description: >
     Schließt das Rollo X Minuten nach Sonnenuntergang (mit Fenster-Check).
     Öffnet das Rollo optional auf eine Wunschposition beim Öffnen (nur nach Sonnenuntergang).
