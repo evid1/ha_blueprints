@@ -1,12 +1,12 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v5)
+  name: Rollo-Steuerung Pro (v7)
   description: >
-    Schließt das Rollo X Minuten nach der Dämmerung (sun_next_dusk).
-    Verhindert das Aussperren und ermöglicht automatisches Öffnen.
+    Schließt Rollos nach Dämmerung + Offset. 
+    Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
   domain: automation
   input:
     target_cover:
-      name: Rollo (Cover)
+      name: Rollo
       selector:
         entity:
           domain: cover
@@ -17,7 +17,7 @@ blueprint:
           domain: binary_sensor
           device_class: [window, door]
     sunset_offset_mins:
-      name: Verzögerung nach Dämmerung (Minuten)
+      name: Verzögerung (Minuten)
       default: 30
       selector:
         number:
@@ -25,13 +25,18 @@ blueprint:
           max: 300
           unit_of_measurement: min
           mode: box
+    notify_device:
+      name: Benachrichtigungs-Dienst (Optional)
+      default: []
+      selector:
+        action: {}
     enable_auto_open:
-      name: Automatisch öffnen bei Öffnung
+      name: Automatisch öffnen
       default: false
       selector:
         boolean: {}
     open_position_pct:
-      name: Öffnungsgrad bei Öffnung
+      name: Öffnungsgrad
       default: 100
       selector:
         number:
@@ -44,71 +49,72 @@ mode: restart
 
 variables:
   offset_mins: !input sunset_offset_mins
-  open_pos: !input open_position_pct
-  # Hilfs-Variable zur Berechnung der "echten" heutigen Dämmerung
-  dusk_time: >
+  # Berechnet den Zielzeitpunkt absolut (heutige Dämmerung + Offset)
+  target_time: >
     {% set next_dusk = states('sensor.sun_next_dusk') | as_datetime %}
-    {# Wenn dusk mehr als 12h in der Zukunft liegt, ist der Sensor bereits auf morgen gesprungen #}
-    {% if next_dusk > now() + timedelta(hours=12) %}
-      {% set dusk = next_dusk - timedelta(days=1) %}
-    {% else %}
-      {% set dusk = next_dusk %}
-    {% endif %}
+    {% set dusk = next_dusk - timedelta(days=1) if next_dusk > now() + timedelta(hours=12) else next_dusk %}
     {{ dusk + timedelta(minutes=offset_mins | int) }}
 
 trigger:
-  # Auslöser 1: Zeitpunkt erreicht (Dämmerung + Offset)
-  - platform: template
-    value_template: "{{ now() >= dusk_time | as_datetime }}"
+  - platform: time
+    at: sensor.sun_next_dusk
     id: "zeit_event"
-  
-  # Auslöser 2: Fenster wird geschlossen
   - platform: state
     entity_id: !input window_sensor
-    from: "on"
-    to: "off"
-    id: "sensor_wurde_zu"
-  
-  # Auslöser 3: Fenster wird geöffnet
-  - platform: state
-    entity_id: !input window_sensor
-    from: "off"
-    to: "on"
-    id: "sensor_wurde_auf"
+    id: "sensor_event"
 
 action:
   - choose:
-      # FALL 1: SENSOR WIRD GEÖFFNET
+      # FALL 1: FENSTER WIRD GEÖFFNET
       - conditions:
           - condition: trigger
-            id: "sensor_wurde_auf"
+            id: "sensor_event"
+          - condition: state
+            entity_id: !input window_sensor
+            state: "on"
           - condition: template
             value_template: !input enable_auto_open
-          # Nur öffnen, wenn es bereits "Dämmerungs-Zeit" ist
           - condition: template
-            value_template: "{{ now() >= dusk_time | as_datetime }}"
+            value_template: "{{ now() >= target_time | as_datetime }}"
         sequence:
           - service: cover.set_cover_position
             target:
               entity_id: !input target_cover
             data:
-              position: "{{ open_pos }}"
+              position: !input open_position_pct
 
-      # FALL 2: ZEIT ERREICHT ODER NACHTRÄGLICH GESCHLOSSEN
+      # FALL 2: SCHLIESS-LOGIK (Zeit erreicht ODER Fenster zu)
       - conditions:
-          - or:
-              - condition: trigger
-                id: "zeit_event"
-              - condition: trigger
-                id: "sensor_wurde_zu"
-          # Bedingung: Es muss nach der Dämmerungs-Zeit sein
           - condition: template
-            value_template: "{{ now() >= dusk_time | as_datetime }}"
-          # Bedingung: Fenster muss zu sein
-          - condition: state
-            entity_id: !input window_sensor
-            state: "off"
+            value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
         sequence:
-          - service: cover.close_cover
-            target:
-              entity_id: !input target_cover
+          # Schritt A: Warte bis der exakte Offset-Zeitpunkt erreicht ist
+          - wait_template: "{{ now() >= target_time | as_datetime }}"
+          
+          # Schritt B: Wenn Fenster offen, schicke Nachricht (nur einmalig beim Zeit-Event)
+          - if:
+              - condition: state
+                entity_id: !input window_sensor
+                state: "on"
+            then:
+              - choose: []
+                default: !input notify_device
+          
+          # Schritt C: Warte bis das Fenster geschlossen wird (kein Timeout)
+          - wait_for_trigger:
+              - platform: state
+                entity_id: !input window_sensor
+                to: "off"
+            # Falls es schon zu ist, geht es sofort weiter
+            timeout: "00:00:01" 
+            continue_on_timeout: true
+
+          # Schritt D: Finaler Check und Schließen
+          - if:
+              - condition: state
+                entity_id: !input window_sensor
+                state: "off"
+            then:
+              - service: cover.close_cover
+                target:
+                  entity_id: !input target_cover
