@@ -1,7 +1,7 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung - Fix)
+  name: Rollo-Steuerung (Smarte Fensteröffnung - Fix) - (v1)
   description: >
-    Schließt das Rollo X Minuten nach Sonnenuntergang (Fenster-Check).
+    Schließt das Rollo X Minuten nach Sonnenuntergang (mit Fenster-Check).
     Öffnet das Rollo optional auf eine Wunschposition beim Öffnen (nur nach Sonnenuntergang).
   domain: automation
   input:
@@ -50,9 +50,17 @@ variables:
 
 trigger:
   # Auslöser 1: Direkt zum Sonnenuntergang
-  - platform: sun
-    event: sunset
-    offset: "00:00:00"
+  #- platform: sun
+  #  event: sunset
+  #  offset: "00:00:00"
+  #  id: "sonnenuntergang_event"
+  - platform: template
+    value_template: >
+      {% set sunset = as_datetime(state_attr('sun.sun', 'next_dusk')) %}
+      {% if sunset < now() %}
+        {% set sunset = sunset + timedelta(days=1) %}
+      {% endif %}
+      {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
     id: "sonnenuntergang_event"
   
   # Auslöser 2: Fenster/Tür wird geschlossen
@@ -98,8 +106,8 @@ action:
             id: "sonnenuntergang_event"
         sequence:
           # Warte die eingestellten Minuten
-          - delay:
-              minutes: "{{ offset_mins | int }}"
+          #- delay:
+          #    minutes: "{{ offset_mins | int }}"
           # Prüfe ob Fenster zu ist
           - condition: state
             entity_id: !input window_sensor
