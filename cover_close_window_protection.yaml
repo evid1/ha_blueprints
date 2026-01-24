@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v3)
+  name: Rollo-Steuerung (Smarte Fensteröffnung) - (v4)
   description: >
     Schließt das Rollo X Minuten nach Sonnenuntergang (mit Fenster-Check).
     Öffnet das Rollo optional auf eine Wunschposition beim Öffnen (nur nach Sonnenuntergang).
@@ -18,11 +18,6 @@ blueprint:
           device_class:
             - window
             - door
-    helper_close_cover:
-      name: Helfer-Variable ob das Rollo geschlossen werden soll
-      selector:
-        entity:
-          domain: binary_sensor
     #sunset_offset_mins:
     #  name: Verzögerung nach Sonnenuntergang (Minuten)
     #  default: 30
@@ -66,10 +61,8 @@ trigger:
   #      {% set sunset = sunset - timedelta(days=1) %}
   #    {% endif %}
   #    {{ now() >= sunset + timedelta(minutes=offset_mins | int) }}
-  - platform: state
-    entity_id: !input helper_close_cover
-    from: "off"
-    to: "on"
+  - platform: time
+    at: sensor.sun_next_dusk
     id: "sonnenuntergang_event"
   
   # Auslöser 2: Fenster/Tür wird geschlossen
