@@ -1,8 +1,8 @@
 blueprint:
-  name: Rollo-Steuerung (v8)
+  name: Rollo-Steuerung mit Retry-Check - (v9)
   description: >
-    Schließt Rollos nach Dämmerung + Offset. 
-    Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
+    Schließt Rollos nach Dämmerung + Offset. Prüft nach 1 Minute,
+    ob das Rollo wirklich die Zielposition erreicht hat und steuert ggf. nach.
   domain: automation
   input:
     target_cover:
@@ -65,7 +65,7 @@ trigger:
 
 action:
   - choose:
-      # FALL 1: FENSTER WIRD GEÖFFNET
+      # FALL 1: FENSTER WIRD GEÖFFNET (Nur nach Dämmerung)
       - conditions:
           - condition: trigger
             id: "sensor_event"
@@ -81,7 +81,18 @@ action:
             target:
               entity_id: !input target_cover
             data:
-              position: !input open_position_pct
+              position: "{{ open_pos }}"
+          # VERIFIZIERUNG NACH 1 MINUTE
+          - delay: "00:01:00"
+          - if:
+              - condition: template
+                value_template: "{{ state_attr(cover_entity, 'current_position') | int != open_pos | int }}"
+            then:
+              - service: cover.set_cover_position
+                target:
+                  entity_id: !input target_cover
+                data:
+                  position: "{{ open_pos }}"
 
       # FALL 2: SCHLIESS-LOGIK (Zeit erreicht ODER Fenster zu)
       - conditions:
@@ -118,3 +129,13 @@ action:
               - service: cover.close_cover
                 target:
                   entity_id: !input target_cover
+              
+              # VERIFIZIERUNG NACH 1 MINUTE
+              - delay: "00:01:00"
+              - if:
+                  - condition: template
+                    value_template: "{{ not is_state(cover_entity, 'closed') }}"
+                then:
+                  - service: cover.close_cover
+                    target:
+                      entity_id: !input target_cover
