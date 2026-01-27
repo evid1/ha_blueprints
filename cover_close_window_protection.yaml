@@ -50,9 +50,21 @@ blueprint:
           unit_of_measurement: "%"
           mode: slider
 
+variables:
+  target_cover_entity: !input target_cover
+  #offset_mins: !input sunset_offset_mins
+  # Berechnet den Zielzeitpunkt absolut (heutige Dämmerung + Offset)
+  #target_time: >
+  #  {% set next_dusk = states('sensor.sun_next_dusk') | as_datetime %}
+  #  {% set dusk = next_dusk - timedelta(days=1) if next_dusk > now() + timedelta(hours=12) else next_dusk %}
+  #  {{ dusk + timedelta(minutes=offset_mins | int) }}
+
 mode: restart
 
 trigger:
+  #- platform: time
+  #  at: sensor.sun_next_dusk
+  #  id: "zeit_event"
   - platform: state
     entity_id: !input sunset_close_trigger_helper
     to: "on" # Reagiert spezifisch auf das Aktivieren
@@ -77,6 +89,8 @@ action:
               - condition: state
                 entity_id: !input sunset_close_trigger_helper
                 state: "on"
+              #- condition: template
+              #  value_template: "{{ now() >= target_time | as_datetime }}"
             then:
               - service: cover.set_cover_position
                 target:
@@ -88,7 +102,10 @@ action:
       - conditions:
           - condition: trigger
             id: "zeit_event"
+          #- condition: template
+          #  value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
         sequence:
+          #- wait_template: "{{ now() >= target_time | as_datetime }}"
           # A: Falls Fenster offen -> Benachrichtigen
           - if:
               - condition: state
@@ -107,7 +124,7 @@ action:
                 state: "off"
               # Optional: Nur schließen, wenn es nicht schon zu ist
               - condition: template
-                value_template: "{{ state_attr(target_cover, 'current_position') | int > 0 }}"
+                value_template: "{{ state_attr(target_cover_entity, 'current_position') | int > 0 }}"
             then:
               - service: cover.close_cover
                 target:
