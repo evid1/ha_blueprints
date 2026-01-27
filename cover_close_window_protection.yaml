@@ -52,21 +52,10 @@ blueprint:
 
 mode: restart
 
-variables:
-  #offset_mins: !input sunset_offset_mins
-  # Berechnet den Zielzeitpunkt absolut (heutige Dämmerung + Offset)
-  #target_time: >
-  #  {% set next_dusk = states('sensor.sun_next_dusk') | as_datetime %}
-  #  {% set dusk = next_dusk - timedelta(days=1) if next_dusk > now() + timedelta(hours=12) else next_dusk %}
-  #  {{ dusk + timedelta(minutes=offset_mins | int) }}
-
 trigger:
-  #- platform: time
-  #  at: sensor.sun_next_dusk
-  #  id: "zeit_event"
   - platform: state
     entity_id: !input sunset_close_trigger_helper
-    state: "on"
+    to: "on" # Reagiert spezifisch auf das Aktivieren
     id: "zeit_event"
   - platform: state
     entity_id: !input window_sensor
@@ -74,7 +63,7 @@ trigger:
 
 action:
   - choose:
-      # FALL 1: FENSTER WIRD GEÖFFNET
+      # FALL 1: FENSTER WIRD GEÖFFNET (Rollo hochfahren)
       - conditions:
           - condition: trigger
             id: "sensor_event"
@@ -86,8 +75,6 @@ action:
           - condition: state
             entity_id: !input sunset_close_trigger_helper
             state: "on"
-          #- condition: template
-          #  value_template: "{{ now() >= target_time | as_datetime }}"
         sequence:
           - service: cover.set_cover_position
             target:
@@ -95,18 +82,13 @@ action:
             data:
               position: !input open_position_pct
 
-      # FALL 2: SCHLIESS-LOGIK (Zeit erreicht ODER Fenster zu)
+      # FALL 2: SCHLIESS-LOGIK
       - conditions:
           - condition: state
             entity_id: !input sunset_close_trigger_helper
             state: "on"
-          #- condition: template
-          #  value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
         sequence:
-          # Schritt A: Warte bis der exakte Offset-Zeitpunkt erreicht ist
-          #- wait_template: "{{ now() >= target_time | as_datetime }}"
-          
-          # Schritt B: Wenn Fenster offen, schicke Nachricht (nur einmalig beim Zeit-Event)
+          # A: Falls Fenster offen -> Benachrichtigen
           - if:
               - condition: state
                 entity_id: !input window_sensor
@@ -115,20 +97,16 @@ action:
               - choose: []
                 default: !input notify_device
           
-          # Schritt C: Warte bis das Fenster geschlossen wird (kein Timeout)
-          - wait_for_trigger:
-              - platform: state
-                entity_id: !input window_sensor
-                to: "off"
-            # Falls es schon zu ist, geht es sofort weiter
-            timeout: "00:00:01" 
-            continue_on_timeout: true
-
-          # Schritt D: Finaler Check und Schließen
+          # B: Nur schließen, wenn Fenster ZU ist
+          # Dank 'mode: restart' wird dieser Teil sofort ausgeführt, 
+          # sobald das Fenster während der "An-Phase" geschlossen wird.
           - if:
               - condition: state
                 entity_id: !input window_sensor
                 state: "off"
+              # Optional: Nur schließen, wenn es nicht schon zu ist
+              - condition: template
+                value_template: "{{ state_attr(target_cover, 'current_position') | int > 0 }}"
             then:
               - service: cover.close_cover
                 target:
