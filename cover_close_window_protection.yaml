@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (v8)
+  name: Rollo-Steuerung (v9)
   description: >
     Schließt Rollos nach Dämmerung + Offset. 
     Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
