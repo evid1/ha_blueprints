@@ -16,15 +16,20 @@ blueprint:
         entity:
           domain: binary_sensor
           device_class: [window, door]
-    sunset_offset_mins:
-      name: Verzögerung (Minuten)
-      default: 30
+    #sunset_offset_mins:
+    #  name: Verzögerung (Minuten)
+    #  default: 30
+    #  selector:
+    #    number:
+    #      min: -120
+    #      max: 300
+    #      unit_of_measurement: min
+    #      mode: box
+    sunset_close_trigger_helper:
+      name: Helfervariable für das Schließen des Rollos
       selector:
-        number:
-          min: -120
-          max: 300
-          unit_of_measurement: min
-          mode: box
+        entity:
+          domain: binary_sensor
     notify_device:
       name: Benachrichtigungs-Dienst (Optional)
       default: []
@@ -48,16 +53,20 @@ blueprint:
 mode: restart
 
 variables:
-  offset_mins: !input sunset_offset_mins
+  #offset_mins: !input sunset_offset_mins
   # Berechnet den Zielzeitpunkt absolut (heutige Dämmerung + Offset)
-  target_time: >
-    {% set next_dusk = states('sensor.sun_next_dusk') | as_datetime %}
-    {% set dusk = next_dusk - timedelta(days=1) if next_dusk > now() + timedelta(hours=12) else next_dusk %}
-    {{ dusk + timedelta(minutes=offset_mins | int) }}
+  #target_time: >
+  #  {% set next_dusk = states('sensor.sun_next_dusk') | as_datetime %}
+  #  {% set dusk = next_dusk - timedelta(days=1) if next_dusk > now() + timedelta(hours=12) else next_dusk %}
+  #  {{ dusk + timedelta(minutes=offset_mins | int) }}
 
 trigger:
-  - platform: time
-    at: sensor.sun_next_dusk
+  #- platform: time
+  #  at: sensor.sun_next_dusk
+  #  id: "zeit_event"
+  - platform: state
+    entity_id: !input sunset_close_trigger_helper
+    state: "on"
     id: "zeit_event"
   - platform: state
     entity_id: !input window_sensor
@@ -74,8 +83,11 @@ action:
             state: "on"
           - condition: template
             value_template: !input enable_auto_open
-          - condition: template
-            value_template: "{{ now() >= target_time | as_datetime }}"
+          - condition: state
+            entity_id: !input sunset_close_trigger_helper
+            state: "on"
+          #- condition: template
+          #  value_template: "{{ now() >= target_time | as_datetime }}"
         sequence:
           - service: cover.set_cover_position
             target:
@@ -85,11 +97,14 @@ action:
 
       # FALL 2: SCHLIESS-LOGIK (Zeit erreicht ODER Fenster zu)
       - conditions:
-          - condition: template
-            value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
+          - condition: state
+            entity_id: !input sunset_close_trigger_helper
+            state: "on"
+          #- condition: template
+          #  value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
         sequence:
           # Schritt A: Warte bis der exakte Offset-Zeitpunkt erreicht ist
-          - wait_template: "{{ now() >= target_time | as_datetime }}"
+          #- wait_template: "{{ now() >= target_time | as_datetime }}"
           
           # Schritt B: Wenn Fenster offen, schicke Nachricht (nur einmalig beim Zeit-Event)
           - if:
