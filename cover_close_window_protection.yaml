@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung Pro (v8)
+  name: Rollo-Steuerung (v8)
   description: >
     Schließt Rollos nach Dämmerung + Offset. 
     Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
@@ -67,26 +67,27 @@ action:
       - conditions:
           - condition: trigger
             id: "sensor_event"
-          - condition: state
-            entity_id: !input window_sensor
-            state: "on"
-          - condition: template
-            value_template: !input enable_auto_open
-          - condition: state
-            entity_id: !input sunset_close_trigger_helper
-            state: "on"
         sequence:
-          - service: cover.set_cover_position
-            target:
-              entity_id: !input target_cover
-            data:
-              position: !input open_position_pct
+          - if:
+              - condition: state
+                entity_id: !input window_sensor
+                state: "on"
+              - condition: template
+                value_template: !input enable_auto_open
+              - condition: state
+                entity_id: !input sunset_close_trigger_helper
+                state: "on"
+            then:
+              - service: cover.set_cover_position
+                target:
+                  entity_id: !input target_cover
+                data:
+                  position: !input open_position_pct
 
       # FALL 2: SCHLIESS-LOGIK
       - conditions:
-          - condition: state
-            entity_id: !input sunset_close_trigger_helper
-            state: "on"
+          - condition: trigger
+            id: "zeit_event"
         sequence:
           # A: Falls Fenster offen -> Benachrichtigen
           - if:
