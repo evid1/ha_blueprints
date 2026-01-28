@@ -104,10 +104,11 @@ action:
 
       # FALL 2: SCHLIESS-LOGIK
       - conditions:
-          - condition: trigger
-            id: "zeit_event"
-          - condition: trigger
-            id: "sensor_wurde_zu"
+          - or:
+            - condition: trigger
+              id: "zeit_event"
+            - condition: trigger
+              id: "sensor_wurde_zu"
           #- condition: template
           #  value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
         sequence:
