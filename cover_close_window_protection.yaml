@@ -106,8 +106,7 @@ action:
       - conditions:
           - condition: trigger
             id: "zeit_event"
-          - platform: state
-            entity_id: !input window_sensor
+          - condition: trigger
             id: "sensor_wurde_zu"
           #- condition: template
           #  value_template: "{{ now() >= (target_time | as_datetime - timedelta(minutes=1)) }}"
