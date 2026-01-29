@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (v12)
+  name: Rollo-Steuerung (v13)
   description: >
     Schließt Rollos nach Dämmerung + Offset. 
     Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
@@ -132,6 +132,9 @@ action:
               # Optional: Nur schließen, wenn es nicht schon zu ist
               - condition: template
                 value_template: "{{ state_attr(target_cover_entity, 'current_position') | int > 0 }}"
+              - condition: state
+                entity_id: !input sunset_close_trigger_helper
+                state: "on"
             then:
               - service: cover.close_cover
                 target:
