@@ -144,7 +144,7 @@ action:
               - delay: "00:01:00"
               - if:
                   - condition: template
-                    value_template: "{{ not is_state(cover_entity, 'closed') }}"
+                    value_template: "{{ not is_state(target_cover_entity, 'closed') }}"
                 then:
                   - service: cover.close_cover
                     target:
