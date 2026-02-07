@@ -11,7 +11,8 @@ blueprint:
         entity:
           domain: cover
     window_sensor:
-      name: Fenster- oder Türsensor
+      name: Fenster- oder Türsensor (Optional)
+      default: [] # Macht den Sensor optional
       selector:
         entity:
           domain: binary_sensor
@@ -86,6 +87,8 @@ action:
       - conditions:
           - condition: trigger
             id: "sensor_wurde_auf"
+          - condition: template
+            value_template: "{{ window_sensor_entity != [] }}"
         sequence:
           - if:
               - condition: template
@@ -115,9 +118,8 @@ action:
           #- wait_template: "{{ now() >= target_time | as_datetime }}"
           # A: Falls Fenster offen -> Benachrichtigen
           - if:
-              - condition: state
-                entity_id: !input window_sensor
-                state: "on"
+              - condition: template
+                value_template: "{{ window_sensor_entity != [] and is_state(window_sensor_entity, 'on') }}"
             then:
               - choose: []
                 default: !input notify_device
@@ -126,9 +128,13 @@ action:
           # Dank 'mode: restart' wird dieser Teil sofort ausgeführt, 
           # sobald das Fenster während der "An-Phase" geschlossen wird.
           - if:
-              - condition: state
-                entity_id: !input window_sensor
-                state: "off"
+              - condition: or
+                conditions:
+                  - condition: template
+                    value_template: "{{ window_sensor_entity == [] }}"
+                  - condition: state
+                    entity_id: !input window_sensor
+                    state: "off"
               # Optional: Nur schließen, wenn es nicht schon zu ist
               - condition: template
                 value_template: "{{ state_attr(target_cover_entity, 'current_position') | int > 0 }}"
