@@ -101,14 +101,11 @@ trigger:
   - platform: state
     entity_id: !input presence_sensor
     id: "presence_sensor"
-<<<<<<< HEAD
   - platform: state
     entity_id: !input window_sensor
     id: "window_sensor_open"
     from: "off"
     to: "on"
-=======
->>>>>>> 689e47bcf1e708dacd804d6f23cc2bb1e5bcbf3e
   - platform: time
     at: !input end_time
     id: "end_time"
