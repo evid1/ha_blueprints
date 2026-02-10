@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v17)"
+  name: "Präsenz-Heizungssteuerung (v18)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Ignoriert Änderungen, wenn manuell eine andere Temperatur als die Wohlfühltemperatur eingestellt wurde."
   domain: automation
   input:
