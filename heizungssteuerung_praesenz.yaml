@@ -1,6 +1,6 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v16)"
-  description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Startet nur durch Ereignisse (Bewegung/Fenster), nicht hart zum Zeitstart."
+  name: "Präsenz-Heizungssteuerung (v17)"
+  description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Ignoriert Änderungen, wenn manuell eine andere Temperatur als die Wohlfühltemperatur eingestellt wurde."
   domain: automation
   input:
     climate_entity:
@@ -94,17 +94,21 @@ variables:
   absence_delay_val: !input absence_delay
   min_delay_val: !input min_delay
   last_finished_timestamp_val: !input last_finished_timestamp
-  climate_entity_state: !input climate_entity
+  climate_entity_id: !input climate_entity
+  comfort_temp_val: !input comfort_temp
 
 trigger:
   - platform: state
     entity_id: !input presence_sensor
     id: "presence_sensor"
+<<<<<<< HEAD
   - platform: state
     entity_id: !input window_sensor
     id: "window_sensor_open"
     from: "off"
     to: "on"
+=======
+>>>>>>> 689e47bcf1e708dacd804d6f23cc2bb1e5bcbf3e
   - platform: time
     at: !input end_time
     id: "end_time"
@@ -118,14 +122,16 @@ action:
             (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
       - condition: trigger
         id: "end_time"
+  
+  # Grundbedingungen: Nicht aus, Fenster zu
   - condition: template
-    value_template: "{{ states(climate_entity_state) != 'off' }}"
+    value_template: "{{ states(climate_entity_id) != 'off' }}"
   - condition: state
     entity_id: !input window_sensor
     state: "off"
   
   - choose:
-      # FALL 1: Heizzeit abgelaufen, zurück in Auto-Modus (sparen)
+      # FALL 1: Zeit abgelaufen (Reset auf Auto erfolgt immer, auch bei manuellem Override)
       - conditions:
           - condition: trigger
             id: "end_time"
@@ -136,7 +142,7 @@ action:
             data:
               hvac_mode: "auto"
 
-      # FALL 2: Wohlfühltemperatur (Heizen)
+      # FALL 2: Heizen (nur wenn nicht manuell verstellt)
       - conditions:
           - condition: state
             entity_id: !input presence_sensor
@@ -147,6 +153,11 @@ action:
           - condition: numeric_state
             entity_id: !input outdoor_temp_sensor
             below: !input outdoor_temp_threshold
+          # PRÜFUNG: Ist das Thermostat im Auto-Modus ODER steht es noch auf der Komfort-Temp?
+          - condition: template
+            value_template: >
+              {{ states(climate_entity_id) == 'auto' or 
+                 state_attr(climate_entity_id, 'temperature') | float == comfort_temp_val | float }}
         sequence:
           - delay:
               minutes: !input presence_delay
@@ -164,7 +175,7 @@ action:
             data:
               datetime: "{{ now() }}"
 
-      # FALL 3: Zurück in den Auto-Modus (sparen)
+      # FALL 3: Sparen (nur wenn nicht manuell verstellt)
       - conditions:
           - or:
               - condition: state
@@ -173,11 +184,15 @@ action:
               - condition: numeric_state
                 entity_id: !input outdoor_temp_sensor
                 above: !input outdoor_temp_threshold
+          # PRÜFUNG: Nur absenken, wenn wir uns noch im Automatik-Bereich/Komfort-Temp befinden
+          - condition: template
+            value_template: >
+              {{ states(climate_entity_id) == 'auto' or 
+                 state_attr(climate_entity_id, 'temperature') | float == comfort_temp_val | float }}
         sequence:
           - if:
               - condition: time
                 after: !input start_time
-              - condition: time
                 before: !input end_time
             then:
               - if:
