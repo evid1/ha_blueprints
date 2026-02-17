@@ -1,5 +1,5 @@
 blueprint:
-  name: "Präsenz-Heizungssteuerung (v18)"
+  name: "Präsenz-Heizungssteuerung (v19)"
   description: "Heizt bei Anwesenheit im Zeitfenster und schaltet auf 'auto' zurück. Ignoriert Änderungen, wenn manuell eine andere Temperatur als die Wohlfühltemperatur eingestellt wurde."
   domain: automation
   input:
@@ -8,6 +8,11 @@ blueprint:
       selector:
         entity:
           domain: climate
+    climate_mode:
+      name: Modus-Entität (HOME / AWAY)
+      selector:
+        entity:
+          domain: sensor
     window_sensor:
       name: Fenster-/Tür-Sensor
       selector:
@@ -109,6 +114,11 @@ trigger:
   - platform: time
     at: !input end_time
     id: "end_time"
+  - platform: state
+    entity_id: !input climate_mode
+    id: "climate_mode_change"
+    from: "HOME"
+    to: "AWAY"
 
 action:
   # Ratenbegrenzung
@@ -119,6 +129,8 @@ action:
             (now() - states(last_finished_timestamp_val) | as_datetime | as_local).total_seconds() >= (min_delay_val * 60) }}
       - condition: trigger
         id: "end_time"
+      - condition: trigger
+        id: "climate_mode_change"
   
   # Grundbedingungen: Nicht aus, Fenster zu
   - condition: template
@@ -128,10 +140,13 @@ action:
     state: "off"
   
   - choose:
-      # FALL 1: Zeit abgelaufen (Reset auf Auto erfolgt immer, auch bei manuellem Override)
+      # FALL 1: Zeit abgelaufen / Anwesenheitsmodus geändert (Reset auf Auto erfolgt immer, auch bei manuellem Override)
       - conditions:
-          - condition: trigger
-            id: "end_time"
+          - or:
+              - condition: trigger
+                id: "end_time"
+              - condition: trigger
+                id: "climate_mode_change"
         sequence:
           - service: climate.set_hvac_mode
             target:
