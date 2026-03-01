@@ -53,6 +53,7 @@ blueprint:
 
 variables:
   target_cover_entity: !input target_cover
+  window_sensor_entity: !input window_sensor
   #offset_mins: !input sunset_offset_mins
   # Berechnet den Zielzeitpunkt absolut (heutige Dämmerung + Offset)
   #target_time: >
