@@ -1,8 +1,7 @@
 blueprint:
-  name: Rollo-Steuerung (v16)
+  name: Rollo-Steuerung (v17)
   description: >
-    Schließt Rollos nach Dämmerung + Offset. 
-    Interrupt-sicher: Fensterbewegungen unterbrechen das Warten nicht permanent.
+    Schließt Rollos nach Dämmerung + Offset.
   domain: automation
   input:
     target_cover:
@@ -36,20 +35,6 @@ blueprint:
       default: []
       selector:
         action: {}
-    enable_auto_open:
-      name: Automatisch öffnen
-      default: false
-      selector:
-        boolean: {}
-    open_position_pct:
-      name: Öffnungsgrad
-      default: 100
-      selector:
-        number:
-          min: 0
-          max: 100
-          unit_of_measurement: "%"
-          mode: slider
 
 variables:
   target_cover_entity: !input target_cover
@@ -84,29 +69,7 @@ trigger:
 
 action:
   - choose:
-      # FALL 1: FENSTER WIRD GEÖFFNET (Rollo hochfahren)
-      - conditions:
-          - condition: trigger
-            id: "sensor_wurde_auf"
-          - condition: template
-            value_template: "{{ window_sensor_entity != [] }}"
-        sequence:
-          - if:
-              - condition: template
-                value_template: !input enable_auto_open
-              - condition: state
-                entity_id: !input sunset_close_trigger_helper
-                state: "on"
-              #- condition: template
-              #  value_template: "{{ now() >= target_time | as_datetime }}"
-            then:
-              - service: cover.set_cover_position
-                target:
-                  entity_id: !input target_cover
-                data:
-                  position: !input open_position_pct
-
-      # FALL 2: SCHLIESS-LOGIK
+      # FALL 1: SCHLIESS-LOGIK
       - conditions:
           - or:
             - condition: trigger
