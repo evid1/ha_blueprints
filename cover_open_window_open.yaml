@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v2)
+  name: Rollo-Steuerung bei Fensteröffnung (v3)
   description: Öffnet ein Rollo bei Fensteröffnung mit bis zu 3 konfigurierbaren Zeitbereichen.
   domain: automation
   input:
@@ -82,10 +82,6 @@ action:
   - choose:
       # Logik Bereich 3
       - conditions:
-          - condition: input_boolean
-            entity_id: !input enable_time_range_3 # Hinweis: Da Input-Selector im Blueprint
-          # Workaround: Da Booleans in Blueprints keine echte "Input-Boolean" Entität sind,
-          # sondern einfache Variablen, wird dies über ein Template geprüft:
           - condition: template
             value_template: "{{ !input enable_time_range_3 }}"
           - condition: time
