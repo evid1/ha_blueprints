@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v4)
+  name: Rollo-Steuerung bei Fensteröffnung (v5)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
@@ -65,6 +65,10 @@ blueprint:
       default: 20
       selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
+variables:
+  enable_time_range_3: !input enable_time_range_3
+  enable_time_range_2: !input enable_time_range_2
+
 trigger:
   - platform: state
     entity_id: !input window_sensor
@@ -76,7 +80,7 @@ action:
       # Logik Bereich 3
       - conditions:
           - condition: template
-            value_template: "{{ !input enable_time_range_3 == true }}"
+            value_template: "{{ enable_time_range_3 == true }}"
           - condition: time
             after: !input time_start_3
             before: !input time_end_3
@@ -88,7 +92,7 @@ action:
       # Logik Bereich 2
       - conditions:
           - condition: template
-            value_template: "{{ !input enable_time_range_2 == true }}"
+            value_template: "{{ enable_time_range_2 == true }}"
           - condition: time
             after: !input time_start_2
             before: !input time_end_2
