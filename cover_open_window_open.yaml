@@ -1,67 +1,62 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v3)
-  description: Öffnet ein Rollo bei Fensteröffnung mit bis zu 3 konfigurierbaren Zeitbereichen.
+  name: Rollo-Steuerung bei Fensteröffnung (v4)
+  description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
     window_sensor:
       name: Fenstersensor
-      selector:
-        entity:
-          domain: binary_sensor
-          device_class: window
+      selector: {entity: {domain: binary_sensor, device_class: window}}
     shutter_entity:
       name: Rollo / Jalousie
-      selector:
-        entity:
-          domain: cover
+      selector: {entity: {domain: cover}}
 
-    # Bereich 1 (immer aktiv)
+    # Bereich 1 (Pflicht)
     time_start_1:
-      name: Startzeit Bereich 1
+      name: Startzeit 1
       default: "07:00:00"
       selector: {time: {}}
     time_end_1:
-      name: Endzeit Bereich 1
+      name: Endzeit 1
       default: "12:00:00"
       selector: {time: {}}
     position_1:
-      name: Position Bereich 1 (%)
+      name: Position 1 (%)
       default: 100
       selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
-    # Bereich 2 (optional)
+    # Bereich 2 (Optional)
     enable_time_range_2:
-      name: Zeitbereich 2 aktivieren
+      name: Bereich 2 aktivieren
       default: false
       selector: {boolean: {}}
     time_start_2:
-      name: Startzeit Bereich 2
+      name: Startzeit 2
       default: "12:00:01"
       selector: {time: {}}
     time_end_2:
-      name: Endzeit Bereich 2
+      name: Endzeit 2
       default: "20:00:00"
       selector: {time: {}}
     position_2:
-      name: Position Bereich 2 (%)
+      name: Position 2 (%)
       default: 50
       selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
-    # Bereich 3 (optional)
+    # Bereich 3 (Optional)
     enable_time_range_3:
-      name: Zeitbereich 3 aktivieren
+      name: Bereich 3 aktivieren
       default: false
       selector: {boolean: {}}
     time_start_3:
-      name: Startzeit Bereich 3
+      name: Startzeit 3
       default: "20:00:01"
       selector: {time: {}}
     time_end_3:
-      name: Endzeit Bereich 3
+      name: Endzeit 3
       default: "23:59:59"
       selector: {time: {}}
     position_3:
-      name: Position Bereich 3 (%)
+      name: Position 3 (%)
       default: 30
       selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
@@ -69,8 +64,6 @@ blueprint:
       name: Standard-Position
       default: 20
       selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
-
-mode: single
 
 trigger:
   - platform: state
@@ -83,7 +76,7 @@ action:
       # Logik Bereich 3
       - conditions:
           - condition: template
-            value_template: "{{ !input enable_time_range_3 }}"
+            value_template: "{{ !input enable_time_range_3 == true }}"
           - condition: time
             after: !input time_start_3
             before: !input time_end_3
@@ -95,7 +88,7 @@ action:
       # Logik Bereich 2
       - conditions:
           - condition: template
-            value_template: "{{ !input enable_time_range_2 }}"
+            value_template: "{{ !input enable_time_range_2 == true }}"
           - condition: time
             after: !input time_start_2
             before: !input time_end_2
@@ -103,7 +96,7 @@ action:
           - service: cover.set_cover_position
             target: {entity_id: !input shutter_entity}
             data: {position: !input position_2}
-      
+
       # Logik Bereich 1
       - conditions:
           - condition: time
