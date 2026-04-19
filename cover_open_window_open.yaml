@@ -1,72 +1,74 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (Zeitbasiert) (v1)
-  description: Öffnet ein Rollo auf eine bestimmte Höhe, wenn ein Fenster geöffnet wird, basierend auf verschiedenen Zeitfenstern.
+  name: Rollo-Steuerung bei Fensteröffnung (Erweitert)
+  description: Öffnet ein Rollo bei Fensteröffnung mit bis zu 3 konfigurierbaren Zeitbereichen.
   domain: automation
   input:
     window_sensor:
       name: Fenstersensor
-      description: Der Sensor, der erkennt, ob das Fenster offen ist.
       selector:
         entity:
           domain: binary_sensor
           device_class: window
     shutter_entity:
       name: Rollo / Jalousie
-      description: Das Rollo, das gesteuert werden soll.
       selector:
         entity:
           domain: cover
-    
-    # Zeitbereich 1
+
+    # Bereich 1 (immer aktiv)
     time_start_1:
       name: Startzeit Bereich 1
       default: "07:00:00"
-      selector:
-        time: {}
+      selector: {time: {}}
     time_end_1:
       name: Endzeit Bereich 1
       default: "12:00:00"
-      selector:
-        time: {}
+      selector: {time: {}}
     position_1:
       name: Position Bereich 1 (%)
       default: 100
-      selector:
-        number:
-          min: 0
-          max: 100
-          unit_of_measurement: "%"
+      selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
-    # Zeitbereich 2
+    # Bereich 2 (optional)
+    enable_time_range_2:
+      name: Zeitbereich 2 aktivieren
+      default: false
+      selector: {boolean: {}}
     time_start_2:
       name: Startzeit Bereich 2
       default: "12:00:01"
-      selector:
-        time: {}
+      selector: {time: {}}
     time_end_2:
       name: Endzeit Bereich 2
       default: "20:00:00"
-      selector:
-        time: {}
+      selector: {time: {}}
     position_2:
       name: Position Bereich 2 (%)
       default: 50
-      selector:
-        number:
-          min: 0
-          max: 100
-          unit_of_measurement: "%"
+      selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
-    # Standardposition (Nacht / Restliche Zeit)
+    # Bereich 3 (optional)
+    enable_time_range_3:
+      name: Zeitbereich 3 aktivieren
+      default: false
+      selector: {boolean: {}}
+    time_start_3:
+      name: Startzeit Bereich 3
+      default: "20:00:01"
+      selector: {time: {}}
+    time_end_3:
+      name: Endzeit Bereich 3
+      default: "23:59:59"
+      selector: {time: {}}
+    position_3:
+      name: Position Bereich 3 (%)
+      default: 30
+      selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
+
     position_default:
-      name: Standard-Position (außerhalb der Zeiten)
-      description: Höhe, wenn das Fenster geöffnet wird und kein Zeitbereich zutrifft.
+      name: Standard-Position
       default: 20
-      selector:
-        number:
-          min: 0
-          max: 100
-          unit_of_measurement: "%"
+      selector: {number: {min: 0, max: 100, unit_of_measurement: "%"}}
 
 mode: single
 
@@ -78,34 +80,45 @@ trigger:
 
 action:
   - choose:
-      # Logik für Bereich 1
+      # Logik Bereich 3
+      - conditions:
+          - condition: input_boolean
+            entity_id: !input enable_time_range_3 # Hinweis: Da Input-Selector im Blueprint
+          # Workaround: Da Booleans in Blueprints keine echte "Input-Boolean" Entität sind,
+          # sondern einfache Variablen, wird dies über ein Template geprüft:
+          - condition: template
+            value_template: "{{ !input enable_time_range_3 }}"
+          - condition: time
+            after: !input time_start_3
+            before: !input time_end_3
+        sequence:
+          - service: cover.set_cover_position
+            target: {entity_id: !input shutter_entity}
+            data: {position: !input position_3}
+
+      # Logik Bereich 2
+      - conditions:
+          - condition: template
+            value_template: "{{ !input enable_time_range_2 }}"
+          - condition: time
+            after: !input time_start_2
+            before: !input time_end_2
+        sequence:
+          - service: cover.set_cover_position
+            target: {entity_id: !input shutter_entity}
+            data: {position: !input position_2}
+      
+      # Logik Bereich 1
       - conditions:
           - condition: time
             after: !input time_start_1
             before: !input time_end_1
         sequence:
           - service: cover.set_cover_position
-            target:
-              entity_id: !input shutter_entity
-            data:
-              position: !input position_1
-      
-      # Logik für Bereich 2
-      - conditions:
-          - condition: time
-            after: !input time_start_2
-            before: !input time_end_2
-        sequence:
-          - service: cover.set_cover_position
-            target:
-              entity_id: !input shutter_entity
-            data:
-              position: !input position_2
+            target: {entity_id: !input shutter_entity}
+            data: {position: !input position_1}
 
-    # Standardaktion, wenn nichts anderes zutrifft
     default:
       - service: cover.set_cover_position
-        target:
-          entity_id: !input shutter_entity
-        data:
-          position: !input position_default
+        target: {entity_id: !input shutter_entity}
+        data: {position: !input position_default}
