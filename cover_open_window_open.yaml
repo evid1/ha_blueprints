@@ -1,12 +1,12 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v5)
+  name: Rollo-Steuerung bei Fensteröffnung (v6)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
     window_sensor:
       name: Fenstersensor
       selector: {entity: {domain: binary_sensor, device_class: window}}
-    shutter_entity:
+    cover_entity:
       name: Rollo / Jalousie
       selector: {entity: {domain: cover}}
 
@@ -68,6 +68,7 @@ blueprint:
 variables:
   enable_time_range_3: !input enable_time_range_3
   enable_time_range_2: !input enable_time_range_2
+  cover_entity: !input cover_entity
 
 trigger:
   - platform: state
@@ -76,6 +77,9 @@ trigger:
     to: "on"
 
 action:
+  - condition: template
+    value_template: "{{ states(cover_entity) != 'open' }}"
+
   - choose:
       # Logik Bereich 3
       - conditions:
@@ -86,7 +90,7 @@ action:
             before: !input time_end_3
         sequence:
           - service: cover.set_cover_position
-            target: {entity_id: !input shutter_entity}
+            target: {entity_id: !input cover_entity}
             data: {position: !input position_3}
 
       # Logik Bereich 2
@@ -98,7 +102,7 @@ action:
             before: !input time_end_2
         sequence:
           - service: cover.set_cover_position
-            target: {entity_id: !input shutter_entity}
+            target: {entity_id: !input cover_entity}
             data: {position: !input position_2}
 
       # Logik Bereich 1
@@ -108,10 +112,10 @@ action:
             before: !input time_end_1
         sequence:
           - service: cover.set_cover_position
-            target: {entity_id: !input shutter_entity}
+            target: {entity_id: !input cover_entity}
             data: {position: !input position_1}
 
     default:
       - service: cover.set_cover_position
-        target: {entity_id: !input shutter_entity}
+        target: {entity_id: !input cover_entity}
         data: {position: !input position_default}
