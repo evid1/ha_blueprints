@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v6)
+  name: Rollo-Steuerung bei Fensteröffnung (v7)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
