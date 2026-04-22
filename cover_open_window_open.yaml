@@ -69,6 +69,9 @@ variables:
   enable_time_range_3: !input enable_time_range_3
   enable_time_range_2: !input enable_time_range_2
   cover_entity: !input cover_entity
+  position_1: !input position_1
+  position_2: !input position_2
+  position_3: !input position_3
 
 trigger:
   - platform: state
@@ -77,9 +80,6 @@ trigger:
     to: "on"
 
 action:
-  - condition: template
-    value_template: "{{ states(cover_entity) != 'open' }}"
-
   - choose:
       # Logik Bereich 3
       - conditions:
@@ -88,6 +88,8 @@ action:
           - condition: time
             after: !input time_start_3
             before: !input time_end_3
+          - condition: template
+            value_template: "{{ state_attr(cover_entity, 'current_position') != position_3 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
@@ -100,6 +102,8 @@ action:
           - condition: time
             after: !input time_start_2
             before: !input time_end_2
+          - condition: template
+            value_template: "{{ state_attr(cover_entity, 'current_position') != position_2 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
@@ -110,6 +114,8 @@ action:
           - condition: time
             after: !input time_start_1
             before: !input time_end_1
+          - condition: template
+            value_template: "{{ state_attr(cover_entity, 'current_position') != position_1 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
