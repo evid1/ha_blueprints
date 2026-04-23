@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v7)
+  name: Rollo-Steuerung bei Fensteröffnung (v8)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
@@ -89,7 +89,7 @@ action:
             after: !input time_start_3
             before: !input time_end_3
           - condition: template
-            value_template: "{{ state_attr(cover_entity, 'current_position') != position_3 }}"
+            value_template: "{{ state_attr(cover_entity, 'current_position') | int < position_3 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
@@ -103,7 +103,7 @@ action:
             after: !input time_start_2
             before: !input time_end_2
           - condition: template
-            value_template: "{{ state_attr(cover_entity, 'current_position') != position_2 }}"
+            value_template: "{{ state_attr(cover_entity, 'current_position') | int < position_2 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
@@ -115,7 +115,7 @@ action:
             after: !input time_start_1
             before: !input time_end_1
           - condition: template
-            value_template: "{{ state_attr(cover_entity, 'current_position') != position_1 }}"
+            value_template: "{{ state_attr(cover_entity, 'current_position') | int < position_1 }}"
         sequence:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
