@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v8)
+  name: Rollo-Steuerung bei Fensteröffnung (v9)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
@@ -120,8 +120,3 @@ action:
           - service: cover.set_cover_position
             target: {entity_id: !input cover_entity}
             data: {position: !input position_1}
-
-    default:
-      - service: cover.set_cover_position
-        target: {entity_id: !input cover_entity}
-        data: {position: !input position_default}
