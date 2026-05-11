@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo-Steuerung (v17)
+  name: Rollo-Steuerung (v18)
   description: >
     Schließt Rollos nach Dämmerung + Offset.
   domain: automation
@@ -111,11 +111,11 @@ action:
                   entity_id: !input target_cover
 
               # VERIFIZIERUNG NACH 1 MINUTE
-              - delay: "00:01:00"
-              - if:
-                  - condition: template
-                    value_template: "{{ not is_state(target_cover_entity, 'closed') }}"
-                then:
-                  - service: cover.close_cover
-                    target:
-                      entity_id: !input target_cover
+              #- delay: "00:01:00"
+              #- if:
+              #    - condition: template
+              #      value_template: "{{ not is_state(target_cover_entity, 'closed') }}"
+              #  then:
+              #    - service: cover.close_cover
+              #      target:
+              #        entity_id: !input target_cover
