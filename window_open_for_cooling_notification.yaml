@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum (v5)
+  name: Sommer-Lüftungsempfehlung per Raum (v6)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster, stoppt jedoch nach einer definierten Uhrzeit.
   domain: automation
   input:
@@ -71,7 +71,7 @@ action:
         sequence:
           - action: notify.signal
             data:
-              message: "Im Raum **{{ raum_name }}** ist die Luftqualitt jetzt draußen besser als drinnen. Du kannst das Fenster öffnen!"
+              message: "Im Raum **{{ raum_name }}** ist die Luftqualität jetzt draußen besser als drinnen. Du kannst das Fenster öffnen!"
               data:
                 text_mode: styled
               
