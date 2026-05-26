@@ -25,16 +25,16 @@ blueprint:
               device_class: door
             - domain: binary_sensor
               device_class: window
-    spaeteste_uhrzeit:
-      name: Späteste Uhrzeit
-      description: Nach dieser Uhrzeit werden keine Benachrichtigungen mehr gesendet (z.B. 22:00:00).
-      default: "23:00:00"
-      selector:
-        time: {}
     fruehste_uhrzeit:
       name: Frühste Uhrzeit
       description: Vor dieser Uhrzeit werden keine Benachrichtigungen gesendet (z.B. 07:00:00).
       default: "07:00:00"
+      selector:
+        time: {}
+    spaeteste_uhrzeit:
+      name: Späteste Uhrzeit
+      description: Nach dieser Uhrzeit werden keine Benachrichtigungen mehr gesendet (z.B. 22:00:00).
+      default: "23:00:00"
       selector:
         time: {}
 
