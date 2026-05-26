@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum
+  name: Sommer-Lüftungsempfehlung per Raum (v2)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster basierend auf einem Lüftungs-Binärsensor (z.B. absolute Feuchte/Temperatur-Vergleich).
   domain: automation
   input:
@@ -22,7 +22,7 @@ blueprint:
         entity:
           filter:
             - domain: binary_sensor
-              device_class: opening
+              device_class: [window, door]
 
 trigger:
   - platform: state
