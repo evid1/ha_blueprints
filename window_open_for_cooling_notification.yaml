@@ -20,9 +20,8 @@ blueprint:
       description: Der Kontaktsensor des Fensters in diesem Raum. Verhindert unnötige "Fenster zu"-Meldungen, wenn es schon zu ist.
       selector:
         entity:
-          filter:
-            - domain: binary_sensor
-              device_class: [window, door]
+          domain: binary_sensor
+          device_class: [window, door]
 
 trigger:
   - platform: state
