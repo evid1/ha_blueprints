@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum (v4)
+  name: Sommer-Lüftungsempfehlung per Raum (v5)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster, stoppt jedoch nach einer definierten Uhrzeit.
   domain: automation
   input:
@@ -31,6 +31,12 @@ blueprint:
       default: "23:00:00"
       selector:
         time: {}
+    fruehste_uhrzeit:
+      name: Frühste Uhrzeit
+      description: Vor dieser Uhrzeit werden keine Benachrichtigungen gesendet (z.B. 07:00:00).
+      default: "07:00:00"
+      selector:
+        time: {}
 
 trigger:
   - platform: state
@@ -50,6 +56,7 @@ trigger:
 condition:
   - condition: time
     before: !input spaeteste_uhrzeit
+    after: !input fruehste_uhrzeit
 
 action:
   - choose:
