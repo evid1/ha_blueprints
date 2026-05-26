@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum (v3)
+  name: Sommer-Lüftungsempfehlung per Raum (v4)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster, stoppt jedoch nach einer definierten Uhrzeit.
   domain: automation
   input:
@@ -28,7 +28,7 @@ blueprint:
     spaeteste_uhrzeit:
       name: Späteste Uhrzeit
       description: Nach dieser Uhrzeit werden keine Benachrichtigungen mehr gesendet (z.B. 22:00:00).
-      default: "22:00:00"
+      default: "23:00:00"
       selector:
         time: {}
 
@@ -62,10 +62,11 @@ action:
             entity_id: !input fenster_sensor
             state: "off"
         sequence:
-          - action: notify.notify
+          - action: notify.signal
             data:
-              title: "Lüften empfohlen! 🪟"
-              message: "Im Raum '{{ raum_name }}' ist es jetzt draußen besser als drinnen. Du kannst das Fenster öffnen!"
+              message: "Im Raum **{{ raum_name }}** ist die Luftqualitt jetzt draußen besser als drinnen. Du kannst das Fenster öffnen!"
+              data:
+                text_mode: styled
               
       # Fall 2: Lüften nicht mehr empfohlen (Fenster sollte zu)
       - conditions:
@@ -76,10 +77,11 @@ action:
             entity_id: !input fenster_sensor
             state: "on"
         sequence:
-          - action: notify.notify
+          - action: notify.signal
             data:
-              title: "Fenster schließen! ☀️"
-              message: "Die Werte für '{{ raum_name }}' haben sich verschlechtert. Bitte das Fenster schließen, um die Hitze/Feuchtigkeit auszusperren."
+              message: "Die Werte für **{{ raum_name }}** haben sich verschlechtert. Bitte das Fenster schließen, um die Hitze/Feuchtigkeit auszusperren."
+              data:
+                text_mode: styled
 
 mode: parallel
 max: 10
