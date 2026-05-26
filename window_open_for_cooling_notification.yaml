@@ -1,0 +1,76 @@
+blueprint:
+  name: Sommer-Lüftungsempfehlung per Raum
+  description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster basierend auf einem Lüftungs-Binärsensor (z.B. absolute Feuchte/Temperatur-Vergleich).
+  domain: automation
+  input:
+    lueftung_sensor:
+      name: Lüftungsempfehlung Sensor
+      description: Der Binärsensor, der angibt, ob Lüften empfohlen ist (on = Lüften, off = Nicht lüften).
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+    raum_name:
+      name: Raumname
+      description: Der Name des Raums (wird im Text der Benachrichtigung verwendet, z.B. "Wohnzimmer").
+      selector:
+        text:
+    fenster_sensor:
+      name: Fenstersensor
+      description: Der Kontaktsensor des Fensters in diesem Raum. Verhindert unnötige "Fenster zu"-Meldungen, wenn es schon zu ist.
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: opening
+
+trigger:
+  - platform: state
+    entity_id: !input lueftung_sensor
+    to: "on"
+    for:
+      minutes: 5
+    id: lueften_an
+  - platform: state
+    entity_id: !input lueftung_sensor
+    to: "off"
+    for:
+      minutes: 5
+    id: lueften_aus
+
+condition: []
+
+action:
+  - choose:
+      # Fall 1: Lüften wird empfohlen
+      - conditions:
+          - condition: trigger
+            id: lueften_an
+          # Optional: Nur benachrichtigen, wenn das Fenster aktuell noch ZU ist
+          - condition: state
+            entity_id: !input fenster_sensor
+            state: "off"
+        sequence:
+          - action: notify.signal
+            data:
+              message: "Im Raum **{{ raum_name }}** ist es jetzt die Luftqualität draußen besser als drinnen. Du kannst das Fenster öffnen!"
+              data:
+                text_mode: styled
+              
+      # Fall 2: Lüften nicht mehr empfohlen (Fenster sollte zu)
+      - conditions:
+          - condition: trigger
+            id: lueften_aus
+          # Wichtig: Nur benachrichtigen, wenn das Fenster auch tatsächlich OFFEN steht
+          - condition: state
+            entity_id: !input fenster_sensor
+            state: "on"
+        sequence:
+          - action: notify.signal
+            data:
+              message: "Die Werte für **{{ raum_name }}** haben sich verschlechtert. Bitte das Fenster schließen, um die Hitze/Feuchtigkeit auszusperren."
+              data:
+                text_mode: styled
+
+mode: parallel
+max: 10
