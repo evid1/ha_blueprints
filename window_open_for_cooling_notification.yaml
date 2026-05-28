@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum (v7)
+  name: Sommer-Lüftungsempfehlung per Raum (v8)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster, stoppt jedoch nach einer definierten Uhrzeit.
   domain: automation
   input:
@@ -46,13 +46,13 @@ trigger:
     entity_id: !input lueftung_sensor
     to: "on"
     for:
-      minutes: 5
+      minutes: 10
     id: lueften_an
   - platform: state
     entity_id: !input lueftung_sensor
     to: "off"
     for:
-      minutes: 5
+      minutes: 10
     id: lueften_aus
 
 # Die globale Bedingung sorgt dafür, dass die Automation nur vor der eingestellten Uhrzeit fortfährt
@@ -74,7 +74,7 @@ action:
         sequence:
           - action: notify.signal
             data:
-              message: "Im Raum **{{ raum_name }}** ist die Luftqualität jetzt draußen besser als drinnen. Du kannst das Fenster öffnen!"
+              message: "Im Raum **{{ raum_name }}** kann das Fenster geöffnet werden!"
               data:
                 text_mode: styled
               
@@ -89,7 +89,7 @@ action:
         sequence:
           - action: notify.signal
             data:
-              message: "Die Werte für **{{ raum_name }}** haben sich verschlechtert. Bitte das Fenster schließen, um die Hitze/Feuchtigkeit auszusperren."
+              message: "Bitte das Fenster in **{{ raum_name }}** schließen."
               data:
                 text_mode: styled
 
