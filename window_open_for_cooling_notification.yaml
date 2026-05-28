@@ -10,10 +10,6 @@ blueprint:
         entity:
           filter:
             - domain: binary_sensor
-      for:
-        hours: 0
-        minutes: 5
-        seconds: 0
     raum_name:
       name: Raumname
       description: Der Name des Raums (wird im Text der Benachrichtigung verwendet, z.B. "Wohnzimmer").
@@ -50,13 +46,13 @@ trigger:
     entity_id: !input lueftung_sensor
     to: "on"
     for:
-      minutes: 5
+      minutes: 10
     id: lueften_an
   - platform: state
     entity_id: !input lueftung_sensor
     to: "off"
     for:
-      minutes: 5
+      minutes: 10
     id: lueften_aus
 
 # Die globale Bedingung sorgt dafür, dass die Automation nur vor der eingestellten Uhrzeit fortfährt
