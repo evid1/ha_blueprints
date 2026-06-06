@@ -1,11 +1,16 @@
 blueprint:
-  name: Rollo-Steuerung bei Fensteröffnung (v9)
+  name: Rollo-Steuerung bei Fensteröffnung (v10)
   description: Erweitertes Blueprint mit optionalen Zeitbereichen.
   domain: automation
   input:
     window_sensor:
-      name: Fenstersensor
-      selector: {entity: {domain: binary_sensor, device_class: window}}
+      name: Fenster-/Tür-Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - window
+            - door
     cover_entity:
       name: Rollo / Jalousie
       selector: {entity: {domain: cover}}
