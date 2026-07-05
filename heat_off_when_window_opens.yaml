@@ -27,8 +27,8 @@ blueprint:
       selector:
         entity:
           domain: sensor
-          multiple: false
-          device_class: temperature
+          device_class:
+            - temperature
     wintermode_temperature:
       name: Wintermode
       description: Ab dieser Außentemperatur wird der Wintermodus aktiv (Heizung darf laufen).
