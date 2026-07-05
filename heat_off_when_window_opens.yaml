@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Thermostat (v2)
+  name: Smart Thermostat (v3)
   description: Schaltet die Heizung aus, wenn ein Fenster geöffnet wird oder die Außentemperatur einen festgelegten Wert erreicht.
   domain: automation
   input:
@@ -123,12 +123,18 @@ action:
                       entity_id: !input thermostat
                     data:
                       hvac_mode: auto
-            default:
-              - service: climate.set_hvac_mode
-                target:
-                  entity_id: !input thermostat
-                data:
-                  hvac_mode: "off"
+              - conditions:
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: !input thermostat
+                        state: "off"
+                sequence:
+                  - service: climate.set_hvac_mode
+                    target:
+                      entity_id: !input thermostat
+                    data:
+                      hvac_mode: "off"
 
       # Es wird kalt (Wintermodus an), aber nur wenn Fenster zu ist
       - conditions:
