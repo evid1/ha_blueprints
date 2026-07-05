@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Thermostat (v1)
+  name: Smart Thermostat (v2)
   description: Schaltet die Heizung aus, wenn ein Fenster geöffnet wird oder die Außentemperatur einen festgelegten Wert erreicht.
   domain: automation
   input:
@@ -8,7 +8,9 @@ blueprint:
       selector:
         entity:
           domain: binary_sensor
-          multiple: false
+          device_class:
+            - window
+            - door
     window_delay:
       name: Fenster / Tür Verzögerung
       description: Verzögerung in Sekunden, um Fehlauslösungen zu vermeiden.
@@ -26,6 +28,7 @@ blueprint:
         entity:
           domain: sensor
           multiple: false
+          device_class: temperature
     wintermode_temperature:
       name: Wintermode
       description: Ab dieser Außentemperatur wird der Wintermodus aktiv (Heizung darf laufen).
