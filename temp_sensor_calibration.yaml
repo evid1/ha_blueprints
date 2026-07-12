@@ -76,6 +76,7 @@ trigger:
   - platform: time_pattern
     minutes: "*"
     id: calibrate
+    
 
 action:
   - choose:
