@@ -45,6 +45,12 @@ blueprint:
       default: "08:00:00"
       selector:
         time: {}
+    time_before:
+      name: Späteste Öffnungszeit
+      default: "18:00:00"
+      selector:
+        time: {}
+
 
 variables:
   auto_open_enabled_var: !input auto_open_enabled
@@ -103,6 +109,7 @@ action:
             value_template: "{{ state_attr(cover_entity_var, 'current_position') | int == close_position_var | int }}"
           - condition: time
             after: !input time_after
+            before: !input time_before
           - condition: trigger
             id:
               - licht_rollo_oeffnen
