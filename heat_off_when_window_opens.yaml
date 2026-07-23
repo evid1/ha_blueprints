@@ -1,0 +1,167 @@
+blueprint:
+  name: Smart Thermostat (v3)
+  description: Schaltet die Heizung aus, wenn ein Fenster geöffnet wird oder die Außentemperatur einen festgelegten Wert erreicht.
+  domain: automation
+  input:
+    window_sensor:
+      name: Fenster / Tür
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - window
+            - door
+    window_delay:
+      name: Fenster / Tür Verzögerung
+      description: Verzögerung in Sekunden, um Fehlauslösungen zu vermeiden.
+      default: 5
+      selector:
+        number:
+          mode: box
+          min: 0.0
+          max: 3600.0
+          unit_of_measurement: seconds
+          step: 1.0
+    outside_temperature:
+      name: Außentemperatur
+      selector:
+        entity:
+          domain: sensor
+          device_class:
+            - temperature
+    wintermode_temperature:
+      name: Wintermode
+      description: Ab dieser Außentemperatur wird der Wintermodus aktiv (Heizung darf laufen).
+      default: 16
+      selector:
+        number:
+          step: 0.5
+          min: 0.0
+          max: 22.0
+          unit_of_measurement: °C
+          mode: slider
+    wintermode_delay:
+      name: Wintermodus Verzögerung
+      description: Verzögerung in Minuten.
+      default: 30
+      selector:
+        number:
+          mode: box
+          min: 1.0
+          max: 1440.0
+          unit_of_measurement: minutes
+          step: 1.0
+    thermostat:
+      name: Thermostat
+      selector:
+        entity:
+          domain: climate
+          multiple: false
+
+trigger:
+  - platform: state
+    entity_id: !input window_sensor
+    to: 'on'
+    for: 
+      seconds: !input window_delay
+    id: window_open
+  - platform: state
+    entity_id: !input window_sensor
+    to: 'off'
+    for: 
+      seconds: !input window_delay
+    id: window_close
+  - platform: numeric_state
+    entity_id: !input outside_temperature
+    for: 
+      minutes: !input wintermode_delay
+    below: !input wintermode_temperature
+    id: wintermode_active
+  - platform: numeric_state
+    entity_id: !input outside_temperature
+    above: !input wintermode_temperature
+    for: 
+      minutes: !input wintermode_delay
+    id: wintermode_inactive
+
+variables:
+  outside_temperature: !input outside_temperature
+  wintermode_temperature: !input wintermode_temperature
+  # Direkter Vergleich des Entitäts-Wertes mit dem numerischen Input
+  is_winter: "{{ states(outside_temperature) | float(2) < wintermode_temperature | float(2) }}"
+
+action:
+  - choose:
+      # Fenster geht auf
+      - conditions:
+          - condition: trigger
+            id: window_open
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input thermostat
+                state: "off"
+        sequence:
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: !input thermostat
+            data:
+              hvac_mode: "off"
+
+      # Fenster geht zu
+      - conditions:
+          - condition: trigger
+            id: window_close
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ is_winter }}"
+                sequence:
+                  - service: climate.set_hvac_mode
+                    target:
+                      entity_id: !input thermostat
+                    data:
+                      hvac_mode: auto
+              - conditions:
+                  - condition: not
+                    conditions:
+                      - condition: state
+                        entity_id: !input thermostat
+                        state: "off"
+                sequence:
+                  - service: climate.set_hvac_mode
+                    target:
+                      entity_id: !input thermostat
+                    data:
+                      hvac_mode: "off"
+
+      # Es wird kalt (Wintermodus an), aber nur wenn Fenster zu ist
+      - conditions:
+          - condition: trigger
+            id: wintermode_active
+          - condition: state
+            entity_id: !input window_sensor
+            state: "off"
+        sequence:
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: !input thermostat
+            data:
+              hvac_mode: auto
+
+      # Es wird warm (Wintermodus aus)
+      - conditions:
+          - condition: trigger
+            id: wintermode_inactive
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input thermostat
+                state: "off"
+        sequence:
+          - service: climate.set_hvac_mode
+            target:
+              entity_id: !input thermostat
+            data:
+              hvac_mode: "off"

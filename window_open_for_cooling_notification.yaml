@@ -1,5 +1,5 @@
 blueprint:
-  name: Sommer-Lüftungsempfehlung per Raum (v8)
+  name: Sommer-Lüftungsempfehlung per Raum (v9)
   description: Sendet Benachrichtigungen zum Öffnen oder Schließen der Fenster, stoppt jedoch nach einer definierten Uhrzeit.
   domain: automation
   input:
@@ -16,15 +16,14 @@ blueprint:
       selector:
         text:
     fenster_sensor:
-      name: Fenstersensor
+      name: Fenster-/Tür-Sensor
       description: Der Kontaktsensor des Fensters in diesem Raum.
       selector:
         entity:
-          filter:
-            - domain: binary_sensor
-              device_class: door
-            - domain: binary_sensor
-              device_class: window
+          domain: binary_sensor
+          device_class:
+            - window
+            - door
     fruehste_uhrzeit:
       name: Frühste Uhrzeit
       description: Vor dieser Uhrzeit werden keine Benachrichtigungen gesendet (z.B. 07:00:00).
