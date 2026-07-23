@@ -1,5 +1,5 @@
 blueprint:
-  name: Rollo Automatik nach Licht und Fenster (v1)
+  name: Rollo Automatik nach Licht und Fenster (v2)
   description: Schließt und öffnet ein Rollo basierend auf einem Lichtsensor und dem Fensterstatus.
   domain: automation
   input:
@@ -34,6 +34,12 @@ blueprint:
           min: 0
           max: 100
           mode: slider
+    auto_open_enabled:
+      name: Automatisches Öffnen aktivieren
+      description: Legt fest, ob das Rollo bei Helligkeitsabfall automatisch wieder hochfährt.
+      default: true
+      selector:
+        boolean: {}
     time_after:
       name: Früheste Öffnungszeit
       default: "08:00:00"
@@ -44,6 +50,9 @@ blueprint:
       default: "18:00:00"
       selector:
         time: {}
+
+variables:
+  auto_open_enabled_var: !input auto_open_enabled
 
 mode: restart
 
@@ -91,6 +100,8 @@ action:
             data:
               position: !input close_position
       - conditions:
+          - condition: template
+            value_template: "{{ auto_open_enabled_var }}"
           - condition: time
             after: !input time_after
             before: !input time_before
